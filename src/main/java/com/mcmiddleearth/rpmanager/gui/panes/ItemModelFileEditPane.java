@@ -19,6 +19,7 @@ package com.mcmiddleearth.rpmanager.gui.panes;
 
 import com.mcmiddleearth.rpmanager.gui.actions.Action;
 import com.mcmiddleearth.rpmanager.gui.components.CollapsibleSection;
+import com.mcmiddleearth.rpmanager.gui.components.VerticalBox;
 import com.mcmiddleearth.rpmanager.gui.components.renderers.EnumListCellRenderer;
 import com.mcmiddleearth.rpmanager.model.GuiLight;
 import com.mcmiddleearth.rpmanager.model.ItemModel;
@@ -50,10 +51,6 @@ public class ItemModelFileEditPane extends BaseModelFileEditPane {
         guiLightPanel.add(guiLightInput);
         this.add(guiLightPanel);
 
-        this.add(displayPanel);
-        this.add(texturesPanel);
-        this.add(elementsPanel);
-
         ItemModelOverridesEditPane overridesEditPane = new ItemModelOverridesEditPane(itemModel);
         overridesEditPane.addChangeListener(e -> onChange());
         CollapsibleSection overridesEditSection =
@@ -64,7 +61,16 @@ public class ItemModelFileEditPane extends BaseModelFileEditPane {
                                 overridesEditPane.addOverrideEntry();
                             }
                         }));
-        this.add(overridesEditSection);
-        this.add(new JLabel("}"));
+        VerticalBox overridesBox = new VerticalBox();
+        overridesBox.add(overridesEditSection);
+        overridesBox.add(new JLabel("}"));
+
+        JTabbedPane tabbedPane = new JTabbedPane();
+        tabbedPane.addTab("Display", displayPanel);
+        tabbedPane.addTab("Textures", texturesPanel);
+        tabbedPane.addTab("Elements", elementsPanel);
+        tabbedPane.addTab("Overrides", overridesBox);
+        tabbedPane.setSelectedIndex(1);
+        this.add(tabbedPane);
     }
 }

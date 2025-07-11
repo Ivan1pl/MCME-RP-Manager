@@ -17,6 +17,7 @@
 
 package com.mcmiddleearth.rpmanager.gui.panes;
 
+import com.mcmiddleearth.rpmanager.gui.components.FastScrollPane;
 import com.mcmiddleearth.rpmanager.model.BlockModel;
 
 import javax.swing.*;
@@ -42,8 +43,11 @@ public class BlockModelFileEditPane extends BaseModelFileEditPane {
         ambientOcclusionPanel.add(ambientOcclusionInput);
         this.add(ambientOcclusionPanel);
 
-        this.add(displayPanel);
-        this.add(texturesPanel);
-        this.add(elementsPanel);
+        JTabbedPane tabbedPane = new JTabbedPane();
+        tabbedPane.addTab("Display", displayPanel);
+        tabbedPane.addTab("Textures", texturesPanel);
+        tabbedPane.addTab("Elements", elementsPanel);
+        tabbedPane.setSelectedIndex(1);
+        this.add(tabbedPane);
     }
 }
