@@ -23,7 +23,7 @@ import com.mcmiddleearth.rpmanager.json.adapters.VariantsJsonAdapter;
 import java.util.List;
 import java.util.Map;
 
-public class BlockState {
+public class BlockState implements JsonRoot {
     @JsonAdapter(VariantsJsonAdapter.Factory.class)
     private Map<String, List<Model>> variants;
     private List<Case> multipart;

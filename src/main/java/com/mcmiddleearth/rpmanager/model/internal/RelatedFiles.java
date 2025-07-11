@@ -22,10 +22,15 @@ import java.util.List;
 public class RelatedFiles {
     private final List<LayerRelatedFiles> relatedModels;
     private final List<LayerRelatedFiles> relatedTextures;
+    private final List<LayerRelatedFiles> relatedBlockstates;
+    private final List<LayerRelatedFiles> relatedItems;
 
-    public RelatedFiles(List<LayerRelatedFiles> relatedModels, List<LayerRelatedFiles> relatedTextures) {
+    public RelatedFiles(List<LayerRelatedFiles> relatedModels, List<LayerRelatedFiles> relatedTextures,
+                        List<LayerRelatedFiles> relatedBlockstates, List<LayerRelatedFiles> relatedItems) {
         this.relatedModels = relatedModels;
         this.relatedTextures = relatedTextures;
+        this.relatedBlockstates = relatedBlockstates;
+        this.relatedItems = relatedItems;
     }
 
     public List<LayerRelatedFiles> getRelatedModels() {
@@ -34,5 +39,13 @@ public class RelatedFiles {
 
     public List<LayerRelatedFiles> getRelatedTextures() {
         return relatedTextures;
+    }
+
+    public List<LayerRelatedFiles> getRelatedBlockstates() {
+        return relatedBlockstates;
+    }
+
+    public List<LayerRelatedFiles> getRelatedItems() {
+        return relatedItems;
     }
 }

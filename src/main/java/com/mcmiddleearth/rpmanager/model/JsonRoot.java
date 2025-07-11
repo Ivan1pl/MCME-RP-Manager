@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2021 MCME
+ * Copyright (C) 2025 MCME
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -17,28 +17,5 @@
 
 package com.mcmiddleearth.rpmanager.model;
 
-import com.google.gson.annotations.SerializedName;
-
-import java.util.List;
-
-public class ItemModel extends BaseModel implements JsonRoot {
-    @SerializedName("gui_light")
-    private GuiLight guiLight;
-    private List<Override> overrides;
-
-    public GuiLight getGuiLight() {
-        return guiLight;
-    }
-
-    public void setGuiLight(GuiLight guiLight) {
-        this.guiLight = guiLight;
-    }
-
-    public List<Override> getOverrides() {
-        return overrides;
-    }
-
-    public void setOverrides(List<Override> overrides) {
-        this.overrides = overrides;
-    }
+public interface JsonRoot {
 }

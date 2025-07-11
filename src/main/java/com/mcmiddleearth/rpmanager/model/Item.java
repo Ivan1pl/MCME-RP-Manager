@@ -22,7 +22,7 @@ import com.google.gson.annotations.SerializedName;
 import com.mcmiddleearth.rpmanager.json.adapters.ItemsModelJsonAdapter;
 import com.mcmiddleearth.rpmanager.model.item.ItemsModel;
 
-public class Item {
+public class Item implements JsonRoot {
     @SerializedName("hand_animation_on_swap")
     private Boolean handAnimationOnSwap;
     @JsonAdapter(ItemsModelJsonAdapter.Factory.class)

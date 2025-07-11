@@ -62,6 +62,8 @@ public class ResourcePackUtils {
             Pattern.compile("^(?:(?<namespace>[^:]+):)?(?<path>[^#]+)#(?:.*)?$");
     private static final Pattern NAMESPACED_PATH_PATTERN =
             Pattern.compile("^(?:(?<namespace>[^:]+):)?(?<path>.+)");
+    private static final Pattern BLOCKSTATE_FILE_PATTERN = Pattern.compile("^assets/[^/]+/blockstates/.*\\.json$");
+    private static final Pattern ITEM_FILE_PATTERN = Pattern.compile("^assets/[^/]+/items/.*\\.json$");
 
     private ResourcePackUtils() {}
 
@@ -106,16 +108,17 @@ public class ResourcePackUtils {
     public static RelatedFiles getRelatedFiles(BlockState blockState, Project project) throws IOException {
         List<LayerRelatedFiles> relatedModels = getRelatedModels(blockState, project);
         List<LayerRelatedFiles> relatedTextures = getRelatedTextures(relatedModels, project);
-        return new RelatedFiles(relatedModels, relatedTextures);
+        return new RelatedFiles(relatedModels, relatedTextures, Collections.emptyList(), Collections.emptyList());
     }
 
     public static RelatedFiles getRelatedFiles(Item item, Project project) throws IOException {
         List<LayerRelatedFiles> relatedModels = getRelatedModels(item, project);
         List<LayerRelatedFiles> relatedTextures = getRelatedTextures(relatedModels, project);
-        return new RelatedFiles(relatedModels, relatedTextures);
+        return new RelatedFiles(relatedModels, relatedTextures, Collections.emptyList(), Collections.emptyList());
     }
 
-    public static RelatedFiles getRelatedFiles(BaseModel model, Project project) throws IOException {
+    public static RelatedFiles getRelatedFiles(BaseModel model, NamespacedPath path, Project project)
+            throws IOException {
         List<NamespacedPath> models = model.getParent() == null ?
                 Collections.emptyList() :
                 Stream.of(model.getParent()).map(ResourcePackUtils::extractPrefix)
@@ -132,7 +135,9 @@ public class ResourcePackUtils {
                         relatedModels.stream())
                         .toList(),
                 project);
-        return new RelatedFiles(relatedModels, relatedTextures);
+        List<LayerRelatedFiles> relatedBlockstates = getBlockStatesContainingModel(path, project);
+        List<LayerRelatedFiles> relatedItems = getItemsContainingModel(path, project);
+        return new RelatedFiles(relatedModels, relatedTextures, relatedBlockstates, relatedItems);
     }
 
     public static List<LayerRelatedFiles> getMatchingBlockStates(Project project, String blockState)
@@ -165,6 +170,177 @@ public class ResourcePackUtils {
             }
         }
         return result;
+    }
+
+    private static List<LayerRelatedFiles> getBlockStatesContainingModel(NamespacedPath model, Project project)
+            throws IOException {
+        List<LayerRelatedFiles> result = new LinkedList<>();
+        for (Layer layer : project.getLayers()) {
+            if (!layer.getFile().getName().endsWith(".jar")) {
+                result.add(getBlockStatesContainingModel(layer, layer.getFile().getParentFile(), model));
+            } else {
+                result.add(zipGetBlockStatesContainingModel(layer, layer.getFile(), model));
+            }
+        }
+        return result;
+    }
+
+    private static LayerRelatedFiles getBlockStatesContainingModel(Layer layer, File dir, NamespacedPath model)
+            throws IOException {
+        LayerRelatedFiles layerRelatedFiles = new LayerRelatedFiles(layer.getName(), new LinkedList<>());
+        File assetsDir = new File(dir, "assets");
+        if (assetsDir.exists()) {
+            for (File namespaceDir : assetsDir.listFiles()) {
+                if (namespaceDir.isDirectory()) {
+                    File blockstatesDir = new File(namespaceDir, "blockstates");
+                    if (blockstatesDir.exists() && blockstatesDir.isDirectory()) {
+                        for (File blockstateFile : blockstatesDir.listFiles()) {
+                            SelectedFileData selectedFileData = FileLoader.load(layer, Stream.concat(
+                                    layer.getFile().getName().endsWith(".jar") ? Stream.empty() : Stream.of(layer.getName()),
+                                    Stream.of("assets", namespaceDir.getName(), "blockstates",
+                                            blockstateFile.getName()))
+                                    .toArray());
+                            if (selectedFileData != null) {
+                                BlockState blockState = (BlockState) selectedFileData.getData();
+                                if (containsModel(blockState, model)) {
+                                    layerRelatedFiles.getRelatedFiles().add(selectedFileData);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        return layerRelatedFiles;
+    }
+
+    private static LayerRelatedFiles zipGetBlockStatesContainingModel(Layer layer, File zip, NamespacedPath model)
+            throws IOException {
+        LayerRelatedFiles layerRelatedFiles = new LayerRelatedFiles(layer.getName(), new LinkedList<>());
+        try (ZipFile zipFile = new ZipFile(zip)) {
+            zipFile.stream().forEach(e -> {
+                Matcher m = BLOCKSTATE_FILE_PATTERN.matcher(e.getName());
+                if (m.matches()) {
+                    try {
+                        SelectedFileData selectedFileData = FileLoader.load(
+                                layer, Stream.of(e.getName().split("/")).toArray());
+                        if (selectedFileData != null) {
+                            BlockState blockState = (BlockState) selectedFileData.getData();
+                            if (containsModel(blockState, model)) {
+                                layerRelatedFiles.getRelatedFiles().add(selectedFileData);
+                            }
+                        }
+                    } catch (IOException ex) {
+                        throw new RuntimeException(ex);
+                    }
+                }
+            });
+        }
+        return layerRelatedFiles;
+    }
+
+    private static List<LayerRelatedFiles> getItemsContainingModel(NamespacedPath model, Project project)
+            throws IOException {
+        List<LayerRelatedFiles> result = new LinkedList<>();
+        for (Layer layer : project.getLayers()) {
+            if (!layer.getFile().getName().endsWith(".jar")) {
+                result.add(getItemsContainingModel(layer, layer.getFile().getParentFile(), model));
+            } else {
+                result.add(zipGetItemsContainingModel(layer, layer.getFile(), model));
+            }
+        }
+        return result;
+    }
+
+    private static LayerRelatedFiles getItemsContainingModel(Layer layer, File dir, NamespacedPath model)
+            throws IOException {
+        LayerRelatedFiles layerRelatedFiles = new LayerRelatedFiles(layer.getName(), new LinkedList<>());
+        File assetsDir = new File(dir, "assets");
+        if (assetsDir.exists()) {
+            for (File namespaceDir : assetsDir.listFiles()) {
+                if (namespaceDir.isDirectory()) {
+                    File itemsDir = new File(namespaceDir, "items");
+                    if (itemsDir.exists() && itemsDir.isDirectory()) {
+                        for (File blockstateFile : itemsDir.listFiles()) {
+                            SelectedFileData selectedFileData = FileLoader.load(layer, Stream.concat(
+                                            layer.getFile().getName().endsWith(".jar") ? Stream.empty() : Stream.of(layer.getName()),
+                                            Stream.of("assets", namespaceDir.getName(), "items",
+                                                    blockstateFile.getName()))
+                                    .toArray());
+                            if (selectedFileData != null) {
+                                Item item = (Item) selectedFileData.getData();
+                                if (containsModel(item, model)) {
+                                    layerRelatedFiles.getRelatedFiles().add(selectedFileData);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        return layerRelatedFiles;
+    }
+
+    private static LayerRelatedFiles zipGetItemsContainingModel(Layer layer, File zip, NamespacedPath model)
+            throws IOException {
+        LayerRelatedFiles layerRelatedFiles = new LayerRelatedFiles(layer.getName(), new LinkedList<>());
+        try (ZipFile zipFile = new ZipFile(zip)) {
+            zipFile.stream().forEach(e -> {
+                Matcher m = ITEM_FILE_PATTERN.matcher(e.getName());
+                if (m.matches()) {
+                    try {
+                        SelectedFileData selectedFileData = FileLoader.load(
+                                layer, Stream.of(e.getName().split("/")).toArray());
+                        if (selectedFileData != null) {
+                            Item item = (Item) selectedFileData.getData();
+                            if (containsModel(item, model)) {
+                                layerRelatedFiles.getRelatedFiles().add(selectedFileData);
+                            }
+                        }
+                    } catch (IOException ex) {
+                        throw new RuntimeException(ex);
+                    }
+                }
+            });
+        }
+        return layerRelatedFiles;
+    }
+
+    private static boolean containsModel(BlockState blockState, NamespacedPath model) {
+        if (blockState.getVariants() != null) {
+            return blockState.getVariants().values().stream().flatMap(Collection::stream)
+                    .anyMatch(m -> model.equals(extractPrefix(m.getModel())));
+        } else if (blockState.getMultipart() != null) {
+            return blockState.getMultipart().stream().flatMap(c -> c.getApply().stream())
+                    .anyMatch(m -> model.equals(extractPrefix(m.getModel())));
+        } else {
+            return false;
+        }
+    }
+
+    private static boolean containsModel(Item item, NamespacedPath model) {
+        return containsModel(item.getModel(), model);
+    }
+
+    private static boolean containsModel(ItemsModel itemsModel, NamespacedPath model) {
+        if (itemsModel instanceof CompositeItemsModel compositeItemsModel) {
+            return compositeItemsModel.getModels().stream().anyMatch(m -> containsModel(m, model));
+        } else if (itemsModel instanceof ConditionItemsModel conditionItemsModel) {
+            return containsModel(conditionItemsModel.getOnFalse(), model) ||
+                    containsModel(conditionItemsModel.getOnTrue(), model);
+        } else if (itemsModel instanceof ModelItemsModel modelItemsModel) {
+            return model.equals(extractPrefix(modelItemsModel.getModel()));
+        } else if (itemsModel instanceof RangeDispatchItemsModel rangeDispatchItemsModel) {
+            return rangeDispatchItemsModel.getEntries().stream().map(RangeDispatchItemsModel.Entry::getModel)
+                    .anyMatch(m -> containsModel(m, model)) ||
+                    containsModel(rangeDispatchItemsModel.getFallback(), model);
+        } else if (itemsModel instanceof SelectItemsModel selectItemsModel) {
+            return selectItemsModel.getCases().stream().map(SelectItemsModel.Case::getModel)
+                    .anyMatch(m -> containsModel(m, model)) ||
+                    containsModel(selectItemsModel.getFallback(), model);
+        } else {
+            return false;
+        }
     }
 
     private static List<LayerRelatedFiles> getRelatedModels(BlockState blockState, Project project) throws IOException {

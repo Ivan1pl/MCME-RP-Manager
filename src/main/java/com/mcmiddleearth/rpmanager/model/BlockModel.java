@@ -17,7 +17,7 @@
 
 package com.mcmiddleearth.rpmanager.model;
 
-public class BlockModel extends BaseModel {
+public class BlockModel extends BaseModel implements JsonRoot {
     private Boolean ambientocclusion;
 
     public Boolean getAmbientocclusion() {

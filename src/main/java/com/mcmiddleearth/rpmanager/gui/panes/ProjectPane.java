@@ -25,6 +25,7 @@ import com.mcmiddleearth.rpmanager.gui.components.tree.StaticTreeNode;
 import com.mcmiddleearth.rpmanager.model.BaseModel;
 import com.mcmiddleearth.rpmanager.model.BlockState;
 import com.mcmiddleearth.rpmanager.model.Item;
+import com.mcmiddleearth.rpmanager.model.internal.NamespacedPath;
 import com.mcmiddleearth.rpmanager.model.internal.RelatedFiles;
 import com.mcmiddleearth.rpmanager.model.internal.SelectedFileData;
 import com.mcmiddleearth.rpmanager.model.project.Layer;
@@ -120,7 +121,8 @@ public class ProjectPane extends JPanel {
                     RelatedFiles relatedFiles = ResourcePackUtils.getRelatedFiles(item, project);
                     relatedFilesPane.setRelatedFiles(relatedFiles);
                 } else if (fileData.getData() instanceof BaseModel model) {
-                    RelatedFiles relatedFiles = ResourcePackUtils.getRelatedFiles(model, project);
+                    RelatedFiles relatedFiles = ResourcePackUtils.getRelatedFiles(
+                            model, extractPath(fileData.getPath()), project);
                     relatedFilesPane.setRelatedFiles(relatedFiles);
                 } else {
                     relatedFilesPane.setRelatedFiles(null);
@@ -133,6 +135,17 @@ public class ProjectPane extends JPanel {
                     "Unknown error reading file: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
             relatedFilesPane.setRelatedFiles(null);
         }
+    }
+
+    private static NamespacedPath extractPath(Object[] path) {
+        int current = 0;
+        while (!"assets".equals(((StaticTreeNode) path[current]).getName())) {
+            current++;
+        }
+        String namespace = ((StaticTreeNode) path[++current]).getName();
+        String file = Stream.of(path).skip(current + 2).map(StaticTreeNode.class::cast).map(StaticTreeNode::getName)
+                .collect(Collectors.joining("/")).replaceAll("\\.json$", "");
+        return new NamespacedPath(namespace, file);
     }
 
     private void updateRecentFiles(SelectedFileData data) {
