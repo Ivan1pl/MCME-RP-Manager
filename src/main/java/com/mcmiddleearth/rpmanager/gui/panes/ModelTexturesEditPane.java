@@ -47,9 +47,8 @@ public class ModelTexturesEditPane extends VerticalBox {
                 new LinkedList<>(baseModel.getTextures().entrySet().stream().map(Pair::new).toList());
 
         if (!textures.isEmpty()) {
-            boolean collapsed = textures.size() != 1;
             for (Pair<String, String> entry : textures) {
-                this.add(createTextureEntry(entry, collapsed));
+                this.add(createTextureEntry(entry));
             }
         }
     }
@@ -57,16 +56,16 @@ public class ModelTexturesEditPane extends VerticalBox {
     public void addTextureEntry() {
         Pair<String, String> entry = new Pair<>(null, null);
         textures.add(entry);
-        this.add(createTextureEntry(entry, false));
+        this.add(createTextureEntry(entry));
         revalidate();
         repaint();
         onTexturesChange();
     }
 
-    private CollapsibleSection createTextureEntry(Pair<String, String> entry, boolean collapsed) {
+    private CollapsibleSection createTextureEntry(Pair<String, String> entry) {
         TextureEntryEditPane textureEntryEditPane = new TextureEntryEditPane(entry);
         textureEntryEditPane.addChangeListener(e -> onTexturesChange());
-        return new CollapsibleSection("Texture", textureEntryEditPane, collapsed, removeTextureButton(entry));
+        return new CollapsibleSection("Texture", textureEntryEditPane, false, removeTextureButton(entry));
     }
 
     private JButton removeTextureButton(Pair<String, String> entry) {
