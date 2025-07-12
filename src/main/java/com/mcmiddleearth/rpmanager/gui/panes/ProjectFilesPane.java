@@ -17,6 +17,7 @@
 
 package com.mcmiddleearth.rpmanager.gui.panes;
 
+import com.mcmiddleearth.rpmanager.events.ComponentSizeUpdatedEvent;
 import com.mcmiddleearth.rpmanager.events.ListItemAddedEvent;
 import com.mcmiddleearth.rpmanager.events.ListItemRemovedEvent;
 import com.mcmiddleearth.rpmanager.gui.actions.Action;
@@ -57,6 +58,7 @@ public class ProjectFilesPane extends JPanel {
         for (Layer layer : project.getLayers()) {
             LayerFilesPane layerFilesPane = new LayerFilesPane(layer, project);
             layerFilesPane.setAlignmentY(TOP_ALIGNMENT);
+            layerFilesPane.addComponentSizeUpdatedListener(this::onLayerCollapsedOrExpanded);
             layerFilesPanes.add(layerFilesPane);
             layerFilesPane.addTreeSelectionListener(this::onFileSelectionChanged);
         }
@@ -100,6 +102,7 @@ public class ProjectFilesPane extends JPanel {
         try {
             LayerFilesPane layerFilesPane = new LayerFilesPane((Layer) event.getItem(), project);
             layerFilesPane.setAlignmentY(TOP_ALIGNMENT);
+            layerFilesPane.addComponentSizeUpdatedListener(this::onLayerCollapsedOrExpanded);
             // event.getIndex() should always be greater than 0 - it is not possible to add before vanilla pack.
             JSplitPane mainSplitPane = (JSplitPane) layerFilesPanes.get(event.getIndex() - 1).getParent();
             JSplitPane newInnerPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, true,
@@ -140,6 +143,32 @@ public class ProjectFilesPane extends JPanel {
         layerFilesPanes.remove(event.getIndex());
         revalidate();
         repaint();
+    }
+
+    private void onLayerCollapsedOrExpanded(ComponentSizeUpdatedEvent event) {
+        int index = layerFilesPanes.indexOf(event.getSource());
+        JSplitPane mainSplitPane = (JSplitPane) layerFilesPanes.get(index).getParent();
+        if (mainSplitPane.isEnabled()) {
+            mainSplitPane.setEnabled(false);
+            mainSplitPane.setDividerLocation(mainSplitPane.getMinimumDividerLocation());
+        } else {
+            mainSplitPane.setEnabled(index != layerFilesPanes.size() - 1);
+            mainSplitPane.setDividerLocation(index == layerFilesPanes.size() - 1 ?
+                    mainSplitPane.getMaximumDividerLocation() : mainSplitPane.getMinimumDividerLocation());
+        }
+        SwingUtilities.invokeLater(() -> updateDividerLocationForCollapsedTrees(0));
+        revalidate();
+        repaint();
+    }
+
+    private void updateDividerLocationForCollapsedTrees(int index) {
+        if (index < layerFilesPanes.size() - 1) {
+            if (!layerFilesPanes.get(index).isExpanded()) {
+                JSplitPane splitPane = (JSplitPane) layerFilesPanes.get(index).getParent();
+                splitPane.setDividerLocation(splitPane.getMinimumDividerLocation());
+            }
+            SwingUtilities.invokeLater(() -> updateDividerLocationForCollapsedTrees(index + 1));
+        }
     }
 
     private void onFileSelectionChanged(Layer layer, JTree tree, TreeSelectionEvent event) {

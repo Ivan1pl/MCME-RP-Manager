@@ -17,11 +17,11 @@
 
 package com.mcmiddleearth.rpmanager.gui.panes;
 
+import com.mcmiddleearth.rpmanager.events.ComponentSizeUpdatedEvent;
+import com.mcmiddleearth.rpmanager.events.EventDispatcher;
+import com.mcmiddleearth.rpmanager.events.EventListener;
 import com.mcmiddleearth.rpmanager.gui.MainWindow;
-import com.mcmiddleearth.rpmanager.gui.components.FastScrollPane;
-import com.mcmiddleearth.rpmanager.gui.components.IconButton;
-import com.mcmiddleearth.rpmanager.gui.components.TextInput;
-import com.mcmiddleearth.rpmanager.gui.components.VerticalBox;
+import com.mcmiddleearth.rpmanager.gui.components.*;
 import com.mcmiddleearth.rpmanager.gui.components.tree.*;
 import com.mcmiddleearth.rpmanager.gui.components.tree.actions.*;
 import com.mcmiddleearth.rpmanager.gui.constants.Icons;
@@ -39,13 +39,20 @@ import javax.swing.tree.DefaultTreeModel;
 import javax.swing.tree.TreePath;
 import java.awt.*;
 import java.awt.event.ActionEvent;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.io.File;
 import java.io.IOException;
 
 public class LayerFilesPane extends JPanel {
+    private final EventDispatcher eventDispatcher = new EventDispatcher();
     private final Layer layer;
     private final JTree tree;
     private final JLabel title;
+    private final VerticalLabel verticalTitle;
+    private final VerticalBox verticalBox;
+    private final FastScrollPane fastScrollPane;
+    private boolean expanded = true;
     private boolean eventsEnabled = true;
     private String searchText = "";
     private String filterText = "";
@@ -71,10 +78,15 @@ public class LayerFilesPane extends JPanel {
         previousAction.setEnabled(false);
 
         setLayout(new BorderLayout());
-        VerticalBox verticalBox = new VerticalBox();
+        verticalBox = new VerticalBox();
 
         title = new JLabel(layer.getName());
         title.setFont(new Font(title.getFont().getName(), Font.BOLD, title.getFont().getSize()));
+        title.addMouseListener(new MouseClickAdapter());
+        verticalTitle = new VerticalLabel(layer.getName(), false);
+        verticalTitle.setFont(new Font(
+                verticalTitle.getFont().getName(), Font.BOLD, verticalTitle.getFont().getSize()));
+        verticalTitle.addMouseListener(new MouseClickAdapter());
         JPanel toolbar = createToolbar(layer, project);
 
         JPanel titlePanel = new JPanel();
@@ -106,7 +118,7 @@ public class LayerFilesPane extends JPanel {
         verticalBox.add(filterBox);
         verticalBox.add(horizontalBox);
         add(verticalBox, BorderLayout.PAGE_START);
-        add(new FastScrollPane(this.tree = createTree(layer.getFile()),
+        add(fastScrollPane = new FastScrollPane(this.tree = createTree(layer.getFile()),
                 ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED,
                 ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER), BorderLayout.CENTER);
     }
@@ -385,5 +397,37 @@ public class LayerFilesPane extends JPanel {
         }
         tree.setSelectionPath(treePath);
         tree.scrollPathToVisible(treePath);
+    }
+
+    private class MouseClickAdapter extends MouseAdapter {
+        @Override
+        public void mouseClicked(MouseEvent e) {
+            if ((e.getSource() == title || e.getSource() == verticalTitle) && e.getButton() == MouseEvent.BUTTON1) {
+                expanded = !expanded;
+                updateState();
+            }
+        }
+    }
+
+    private void updateState() {
+        removeAll();
+        if (expanded) {
+            add(verticalBox, BorderLayout.PAGE_START);
+            add(fastScrollPane, BorderLayout.CENTER);
+        } else {
+            add(verticalTitle, BorderLayout.PAGE_START);
+        }
+        revalidate();
+        repaint();
+        SwingUtilities.invokeLater(() -> eventDispatcher.dispatchEvent(
+                new ComponentSizeUpdatedEvent(this, getMinimumSize())));
+    }
+
+    public void addComponentSizeUpdatedListener(EventListener<ComponentSizeUpdatedEvent> listener) {
+        eventDispatcher.addEventListener(listener, ComponentSizeUpdatedEvent.class);
+    }
+
+    public boolean isExpanded() {
+        return expanded;
     }
 }
