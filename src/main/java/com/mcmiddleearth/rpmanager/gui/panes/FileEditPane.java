@@ -30,6 +30,7 @@ import com.mcmiddleearth.rpmanager.model.internal.SelectedFileData;
 import com.mcmiddleearth.rpmanager.utils.Action;
 import com.mcmiddleearth.rpmanager.utils.ActionManager;
 import com.mcmiddleearth.rpmanager.utils.GsonProvider;
+import com.mcmiddleearth.rpmanager.utils.TextAreaUtils;
 import org.eclipse.jgit.api.errors.GitAPIException;
 
 import javax.swing.*;
@@ -110,7 +111,11 @@ public class FileEditPane extends JPanel {
         if (editPane.getComponentCount() > 0 && editPane.getComponent(0) instanceof JScrollPane scrollPane &&
                 scrollPane.getViewport() != null &&
                 scrollPane.getViewport().getView() instanceof BlockstateFileEditPane blockstateFileEditPane) {
-            blockstateFileEditPane.scrollToMatchingNodeAndExpand(searchString);
+            String previewPart = blockstateFileEditPane.scrollToMatchingNodeAndExpand(searchString);
+            if (previewPart != null) {
+                SwingUtilities.invokeLater(
+                        () -> TextAreaUtils.scrollTextAreaIgnoreWhitespaces(previewArea, previewPart));
+            }
         }
     }
 

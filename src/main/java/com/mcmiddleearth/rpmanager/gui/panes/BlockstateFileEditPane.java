@@ -32,23 +32,16 @@ import com.mcmiddleearth.rpmanager.model.Case;
 import com.mcmiddleearth.rpmanager.model.Model;
 import com.mcmiddleearth.rpmanager.model.When;
 import com.mcmiddleearth.rpmanager.utils.BlockStateUtils;
+import com.mcmiddleearth.rpmanager.utils.GsonProvider;
 
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
-import java.util.Collections;
-import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 public class BlockstateFileEditPane extends VerticalBox {
-    private static final Pattern BLOCK_STATE_VARIANT_PATTERN = Pattern.compile("^[^\\[#]+\\[([^]]*)]$");
-    private static final Pattern BLOCK_STATE_VARIANT_PATTERN2 = Pattern.compile("^[^#]+#(.*)$");
     private final String fileName;
     private final BlockState blockState;
     private final EventDispatcher eventDispatcher = new EventDispatcher();
@@ -91,28 +84,28 @@ public class BlockstateFileEditPane extends VerticalBox {
         }
     }
 
-    public void scrollToMatchingNodeAndExpand(String searchString) {
-        Matcher matcher = BLOCK_STATE_VARIANT_PATTERN.matcher(searchString);
-        Matcher matcher2 = BLOCK_STATE_VARIANT_PATTERN2.matcher(searchString);
-        Map<String, String> matchValues = getVariantValues(matcher.matches() ?
-                matcher.group(1) : (matcher2.matches() ? matcher2.group(1) : null));
+    public String scrollToMatchingNodeAndExpand(String searchString) {
+        Map<String, String> matchValues = BlockStateUtils.getVariantValuesBySearchString(searchString);
         for (int i = 0; i < getComponentCount(); ++i) {
             if (getComponent(i) instanceof CollapsibleSection collapsibleSection) {
                 if (collapsibleSection.getContent() instanceof VariantEditPane variantEditPane) {
-                    Map<String, String> variantValues = getVariantValues(variantEditPane.getVariant());
-                    if (allMatch(variantValues, matchValues)) {
+                    if (BlockStateUtils.matches(variantEditPane.getVariant(), matchValues)) {
                         scrollToAndExpand(collapsibleSection);
-                        return;
+                        return "\"" + variantEditPane.getVariant() + "\"";
                     }
                 } else if (collapsibleSection.getContent() instanceof CaseEditPane caseEditPane) {
-                    if (getCaseValues(caseEditPane.getCase().getWhen()).stream()
-                            .anyMatch(values -> allMatch(values, matchValues))) {
+                    if (BlockStateUtils.matches(caseEditPane.getCase(), matchValues)) {
                         scrollToAndExpand(collapsibleSection);
-                        return;
+                        return getPreviewString(caseEditPane.getCase());
                     }
                 }
             }
         }
+        return null;
+    }
+
+    private String getPreviewString(Object o) {
+        return GsonProvider.getGson().toJson(o).replaceAll("\\s+", "");
     }
 
     private void addSection() {
@@ -222,27 +215,5 @@ public class BlockstateFileEditPane extends VerticalBox {
         SwingUtilities.invokeLater(() -> {
             scrollRectToVisible(collapsibleSection.getBounds());
         });
-    }
-
-    private static Map<String, String> getVariantValues(String variantString) {
-        return variantString == null ?
-                new HashMap<>() :
-                Stream.of(variantString.split(",")).map(String::trim)
-                        .map(s -> s.replaceAll("\\u003d", "=")).filter(s -> s.contains("=")).collect(
-                                Collectors.toMap(s -> s.split("=", 2)[0], s -> s.split("=", 2)[1]));
-    }
-
-    private static List<Map<String, String>> getCaseValues(When caseCondition) {
-        List<Map<String, Object>> conditions = caseCondition.getValue() == null ?
-                caseCondition.getOR() : Collections.singletonList(caseCondition.getValue());
-        return conditions == null ?
-                new LinkedList<>() :
-                conditions.stream().map(m -> m.entrySet().stream().collect(Collectors.toMap(
-                        Map.Entry::getKey, e -> e.getValue() == null ? "" : e.getValue().toString()))).toList();
-    }
-
-    private static boolean allMatch(Map<String, String> value, Map<String, String> template) {
-        return value.entrySet().stream()
-                .allMatch(e -> !template.containsKey(e.getKey()) || e.getValue().equals(template.get(e.getKey())));
     }
 }

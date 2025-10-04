@@ -24,10 +24,13 @@ import com.mcmiddleearth.rpmanager.gui.components.IconButton;
 import com.mcmiddleearth.rpmanager.gui.components.TextInput;
 import com.mcmiddleearth.rpmanager.gui.components.VerticalBox;
 import com.mcmiddleearth.rpmanager.gui.constants.Icons;
+import com.mcmiddleearth.rpmanager.model.BlockState;
 import com.mcmiddleearth.rpmanager.model.internal.LayerRelatedFiles;
 import com.mcmiddleearth.rpmanager.model.internal.SelectedFileData;
+import com.mcmiddleearth.rpmanager.utils.BlockStateUtils;
 import com.mcmiddleearth.rpmanager.utils.GsonProvider;
 import com.mcmiddleearth.rpmanager.utils.ResourcePackUtils;
+import com.mcmiddleearth.rpmanager.utils.TextAreaUtils;
 
 import javax.swing.*;
 import javax.swing.event.ListSelectionEvent;
@@ -37,6 +40,7 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.io.IOException;
 import java.util.List;
+import java.util.Map;
 
 public class FindBlockStateModal extends JDialog {
     private final JButton search;
@@ -152,13 +156,36 @@ public class FindBlockStateModal extends JDialog {
     }
 
     private void setPreview(SelectedFileData selectedFileData) {
-        setPreview(selectedFileData == null ? "" : GsonProvider.getGson().toJson(selectedFileData.getData()));
+        if (selectedFileData == null) {
+            setPreview("", null);
+        } else {
+            setPreview(GsonProvider.getGson().toJson(selectedFileData.getData()),
+                    (BlockState) selectedFileData.getData());
+        }
     }
 
-    private void setPreview(String text) {
+    private void setPreview(String text, BlockState blockState) {
+        String previewSelectString = null;
         preview.setText(text);
+        if (blockState != null && searchString != null && !searchString.trim().isEmpty()) {
+            Map<String, String> matchValues = BlockStateUtils.getVariantValuesBySearchString(searchString.trim());
+            if (blockState.getVariants() != null) {
+                previewSelectString = blockState.getVariants().keySet().stream()
+                        .filter(variant -> BlockStateUtils.matches(variant, matchValues))
+                        .findFirst().map(s -> "\"" + s + "\"").orElse(null);
+            } else if (blockState.getMultipart() != null) {
+                previewSelectString = blockState.getMultipart().stream()
+                        .filter(c -> BlockStateUtils.matches(c, matchValues))
+                        .findFirst().map(c -> GsonProvider.getGson().toJson(c).replaceAll("\\s+", ""))
+                        .orElse(null);
+            }
+        }
         invalidate();
         repaint();
+        if (previewSelectString != null) {
+            String selectString = previewSelectString;
+            SwingUtilities.invokeLater(() -> TextAreaUtils.scrollTextAreaIgnoreWhitespaces(preview, selectString));
+        }
     }
 
     private static class LayerRelatedFilesListCellRenderer extends DefaultListCellRenderer {
