@@ -91,4 +91,8 @@ public class VerticalBox extends JPanel {
         c.weighty = 1.0;
         add(Box.createVerticalGlue(), c);
     }
+
+    public int getChildrenCount() {
+        return gridBagConstraints.gridy;
+    }
 }

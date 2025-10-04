@@ -22,6 +22,8 @@ import com.mcmiddleearth.rpmanager.gui.constants.Icons;
 import javax.swing.*;
 import javax.swing.border.Border;
 import java.awt.*;
+import java.awt.event.ContainerEvent;
+import java.awt.event.ContainerListener;
 
 public class CollapsibleSection extends JPanel {
     private final JButton expandButton;
@@ -56,6 +58,19 @@ public class CollapsibleSection extends JPanel {
         titlePanel.add(this.title, BorderLayout.CENTER);
         titlePanel.add(toolbar, BorderLayout.LINE_END);
         this.add(titlePanel, BorderLayout.PAGE_START);
+
+        content.addContainerListener(new ContainerListener() {
+            @Override
+            public void componentAdded(ContainerEvent containerEvent) {
+                updateState();
+            }
+
+            @Override
+            public void componentRemoved(ContainerEvent containerEvent) {
+                updateState();
+            }
+        });
+
         updateState();
     }
 
@@ -70,6 +85,8 @@ public class CollapsibleSection extends JPanel {
 
     private void updateState() {
         expandButton.setIcon(collapsed ? Icons.EXPAND_ICON : Icons.RETRACT_ICON);
+        expandButton.setVisible(content.getComponentCount() > 0 &&
+                (!(content instanceof VerticalBox verticalBox) || verticalBox.getChildrenCount() > 0));
         content.setVisible(!collapsed);
         setBorder(collapsed ? noBorder : border);
         if (collapsed && contentPresent) {
