@@ -274,11 +274,14 @@ public class LayerFilesPane extends JPanel {
         removeFromFavoritesAction.setEnabled(false);
         Action openFileLocationAction = new TreeOpenFileLocationAction(tree);
         openFileLocationAction.setEnabled(false);
+        Action generateSmlScopesAction = new GenerateSmlScopesAction(tree);
+        generateSmlScopesAction.setEnabled(false);
         Action gitAddAction = new TreeGitAddAction(tree);
         gitAddAction.setEnabled(false);
         Action[] newActions = new Action[] { newFileAction, newDirectoryAction };
         Action[] actions = new Action[]{ copyAction, pasteAction, deleteAction, renameAction, duplicateAction,
-                replaceInFilesAction, addToFavoritesAction, removeFromFavoritesAction, openFileLocationAction };
+                replaceInFilesAction, addToFavoritesAction, removeFromFavoritesAction, openFileLocationAction,
+                generateSmlScopesAction };
         Action[] gitActions = new Action[] { gitAddAction };
 
         JPopupMenu menu = new JPopupMenu();
@@ -314,6 +317,11 @@ public class LayerFilesPane extends JPanel {
                     }
                 }
             }
+            boolean canGenerateScopes = false;
+            if (selectedFiles == 1 && editable) {
+                StaticTreeNode node = (StaticTreeNode) tree.getSelectionPaths()[0].getLastPathComponent();
+                canGenerateScopes = !"minecraft".equals(node.getName()) && isNamespaceDir(node);
+            }
             newFileAction.setEnabled(editable && selectedFiles == 1);
             newDirectoryAction.setEnabled(editable && selectedFiles == 1);
             copyAction.setEnabled(selectedFiles > 0);
@@ -325,9 +333,15 @@ public class LayerFilesPane extends JPanel {
             addToFavoritesAction.setEnabled(selectedFiles > 0);
             removeFromFavoritesAction.setEnabled(selectedFiles > 0);
             openFileLocationAction.setEnabled(editable && selectedFiles == 1);
+            generateSmlScopesAction.setEnabled(editable && canGenerateScopes);
             gitAddAction.setEnabled(editable && canAddToGit);
         });
         return menu;
+    }
+
+    private static boolean isNamespaceDir(StaticTreeNode node) {
+        return node.getParent() != null && "assets".equals(((StaticTreeNode) node.getParent()).getName()) &&
+                (node.getParent().getParent() == null || node.getParent().getParent().getParent() == null);
     }
 
     public Layer getLayer() {
