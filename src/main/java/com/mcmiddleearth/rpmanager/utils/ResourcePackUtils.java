@@ -399,7 +399,7 @@ public class ResourcePackUtils {
         return result;
     }
 
-    private static List<LayerRelatedFiles> getModels(List<NamespacedPath> models, Project project) throws IOException {
+    public static List<LayerRelatedFiles> getModels(List<NamespacedPath> models, Project project) throws IOException {
         List<LayerRelatedFiles> result = new LinkedList<>();
         for (com.mcmiddleearth.rpmanager.model.project.Layer layer : project.getLayers()) {
             List<SelectedFileData> layerModels = new LinkedList<>();
@@ -430,6 +430,11 @@ public class ResourcePackUtils {
                 .map(ResourcePackUtils::extractPrefix)
                 .distinct()
                 .toList();
+        return getTextures(textures, project);
+    }
+
+    public static List<LayerRelatedFiles> getTextures(List<NamespacedPath> textures, Project project)
+            throws IOException {
         List<LayerRelatedFiles> result = new LinkedList<>();
         for (com.mcmiddleearth.rpmanager.model.project.Layer layer : project.getLayers()) {
             List<SelectedFileData> layerTextures = new LinkedList<>();

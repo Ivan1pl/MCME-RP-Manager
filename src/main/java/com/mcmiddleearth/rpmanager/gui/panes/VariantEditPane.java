@@ -20,12 +20,14 @@ package com.mcmiddleearth.rpmanager.gui.panes;
 import com.mcmiddleearth.rpmanager.events.ChangeEvent;
 import com.mcmiddleearth.rpmanager.events.EventDispatcher;
 import com.mcmiddleearth.rpmanager.events.EventListener;
+import com.mcmiddleearth.rpmanager.gui.MainWindow;
 import com.mcmiddleearth.rpmanager.gui.actions.Action;
 import com.mcmiddleearth.rpmanager.gui.components.CollapsibleSection;
 import com.mcmiddleearth.rpmanager.gui.components.IconButton;
 import com.mcmiddleearth.rpmanager.gui.components.VerticalBox;
 import com.mcmiddleearth.rpmanager.gui.constants.Icons;
 import com.mcmiddleearth.rpmanager.model.Model;
+import com.mcmiddleearth.rpmanager.process.BlockstateCloneLastModelProcess;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
@@ -48,6 +50,13 @@ public class VariantEditPane extends VerticalBox {
             @Override
             public void actionPerformed(ActionEvent actionEvent) {
                 addModel();
+            }
+        }));
+
+        this.add(new JButton(new Action("Clone last model", "Clone last model and add it to this variant") {
+            @Override
+            public void actionPerformed(ActionEvent actionEvent) {
+                cloneModel();
             }
         }));
 
@@ -97,6 +106,48 @@ public class VariantEditPane extends VerticalBox {
         repaint();
 
         eventDispatcher.dispatchEvent(new ChangeEvent(this, model));
+    }
+
+    private void cloneModel() {
+        Model lastModel = models.isEmpty() ? null : models.get(models.size() - 1);
+        String oldName = lastModel == null ? null : lastModel.getModel();
+        if (oldName == null) {
+            JOptionPane.showMessageDialog(MainWindow.getInstance(),
+                    "Last defined model is incomplete and cannot be cloned",
+                    "Error", JOptionPane.ERROR_MESSAGE);
+        } else {
+            try {
+                new BlockstateCloneLastModelProcess(result -> cloneModel(result), models, lastModel,
+                        MainWindow.getInstance().getCurrentLayer().getName()).start();
+            } catch (Exception e) {
+                JOptionPane.showMessageDialog(MainWindow.getInstance(),
+                        "Unknown error: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+            }
+        }
+    }
+
+    private void cloneModel(BlockstateCloneLastModelProcess.Result cloneProcessResult) {
+        if (cloneProcessResult == null) {
+            JOptionPane.showMessageDialog(MainWindow.getInstance(),
+                    "Clone operation failed", "Error", JOptionPane.ERROR_MESSAGE);
+        } else {
+            MainWindow.getInstance().getActionManager().submit(
+                    cloneProcessResult.getUndoAction(), cloneProcessResult.getRedoAction());
+
+            Model model = models.get(models.size() - 1);
+            VariantModelEditPane variantModelEditPane = new VariantModelEditPane(model);
+            variantModelEditPane.addChangeListener(this::onChange);
+            this.add(new CollapsibleSection(
+                    Integer.toString(models.size()), variantModelEditPane, false, removeModelButton(model)));
+            this.add(new JSeparator());
+
+            revalidate();
+            repaint();
+
+            eventDispatcher.dispatchEvent(new ChangeEvent(this, model));
+
+            MainWindow.getInstance().getActionManager().refresh();
+        }
     }
 
     private void removeModel(Model model) {

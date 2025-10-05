@@ -22,6 +22,7 @@ import com.mcmiddleearth.rpmanager.gui.actions.Actions;
 import com.mcmiddleearth.rpmanager.gui.actions.OpenProjectAction;
 import com.mcmiddleearth.rpmanager.gui.panes.ProjectsPane;
 import com.mcmiddleearth.rpmanager.model.internal.Settings;
+import com.mcmiddleearth.rpmanager.model.project.Layer;
 import com.mcmiddleearth.rpmanager.model.project.Project;
 import com.mcmiddleearth.rpmanager.model.project.Session;
 import com.mcmiddleearth.rpmanager.utils.ActionManager;
@@ -100,6 +101,10 @@ public class MainWindow extends JFrame {
 
     public Project getCurrentProject() {
         return projectsPane.getCurrentProject();
+    }
+
+    public Layer getCurrentLayer() {
+        return projectsPane.getCurrentLayer();
     }
 
     public Settings getSettings() {

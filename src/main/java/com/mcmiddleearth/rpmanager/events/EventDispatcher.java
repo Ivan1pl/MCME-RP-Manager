@@ -36,7 +36,7 @@ public class EventDispatcher {
         }
     }
 
-    public <T extends Event> void addEventListener(EventListener<T> listener, Class<T> eventClass) {
+    public <T extends Event> void addEventListener(EventListener<T> listener, Class<? extends T> eventClass) {
         listeners.computeIfAbsent(eventClass, ignored -> new LinkedList<>()).add(listener);
     }
 }

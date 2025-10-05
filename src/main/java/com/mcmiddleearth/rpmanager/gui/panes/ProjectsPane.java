@@ -19,6 +19,7 @@ package com.mcmiddleearth.rpmanager.gui.panes;
 
 import com.mcmiddleearth.rpmanager.events.ListItemAddedEvent;
 import com.mcmiddleearth.rpmanager.events.ListItemRemovedEvent;
+import com.mcmiddleearth.rpmanager.model.project.Layer;
 import com.mcmiddleearth.rpmanager.model.project.Project;
 import com.mcmiddleearth.rpmanager.model.project.Session;
 import com.mcmiddleearth.rpmanager.utils.ActionManager;
@@ -59,6 +60,14 @@ public class ProjectsPane extends JTabbedPane {
     public Project getCurrentProject() {
         int index = getSelectedIndex();
         return index >= session.getProjects().size() ? null : session.getProjects().get(index);
+    }
+
+    public Layer getCurrentLayer() {
+        if (getSelectedComponent() instanceof ProjectPane projectPane) {
+            return projectPane.getCurrentLayer();
+        } else {
+            return null;
+        }
     }
 
     public ActionManager getActionManager() {

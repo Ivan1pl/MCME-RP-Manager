@@ -53,6 +53,7 @@ public class ProjectPane extends JPanel {
     private final FileEditPane fileEditPane;
     private final RelatedFilesPane relatedFilesPane;
     private final ActionManager actionManager;
+    private Layer currentLayer = null;
 
     public ProjectPane(Project project) throws IOException, GitAPIException {
         this.project = project;
@@ -90,6 +91,7 @@ public class ProjectPane extends JPanel {
     }
 
     public void onTreeSelectionChanged(Layer layer, JTree tree, TreeSelectionEvent event) {
+        currentLayer = layer;
         TreePath newPath = event.getNewLeadSelectionPath();
         try {
             SelectedFileData fileData = newPath == null ? null : FileLoader.load(layer, newPath.getPath());
@@ -194,5 +196,9 @@ public class ProjectPane extends JPanel {
 
     public void reload() {
         treesPane.reload();
+    }
+
+    public Layer getCurrentLayer() {
+        return currentLayer;
     }
 }
