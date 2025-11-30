@@ -17,14 +17,19 @@
 
 package com.mcmiddleearth.rpmanager.model;
 
+import java.lang.Override;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
-public abstract class BaseModel {
+public abstract class BaseModel implements ExtraFieldsHolder {
+    protected static Set<String> BASE_KNOWN_FIELDS = Set.of("parent", "display", "textures", "elements");
     private String parent;
     private Map<Position, Display> display;
     private Map<String, String> textures;
     private List<Element> elements;
+    private transient Map<String, Object> extra = new HashMap<>();
 
     public String getParent() {
         return parent;
@@ -56,5 +61,15 @@ public abstract class BaseModel {
 
     public void setElements(List<Element> elements) {
         this.elements = elements;
+    }
+
+    @Override
+    public Map<String, Object> getExtra() {
+        return extra;
+    }
+
+    @Override
+    public void setExtra(Map<String, Object> extra) {
+        this.extra = extra;
     }
 }

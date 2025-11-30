@@ -17,7 +17,14 @@
 
 package com.mcmiddleearth.rpmanager.model;
 
+import java.lang.Override;
+import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
 public class BlockModel extends BaseModel implements JsonRoot {
+    private static final Set<String> KNOWN_FIELDS =
+            Stream.concat(BASE_KNOWN_FIELDS.stream(), Stream.of("ambientocclusion")).collect(Collectors.toSet());
     private Boolean ambientocclusion;
 
     public Boolean getAmbientocclusion() {
@@ -26,5 +33,10 @@ public class BlockModel extends BaseModel implements JsonRoot {
 
     public void setAmbientocclusion(Boolean ambientocclusion) {
         this.ambientocclusion = ambientocclusion;
+    }
+
+    @Override
+    public Set<String> getKnownFields() {
+        return KNOWN_FIELDS;
     }
 }

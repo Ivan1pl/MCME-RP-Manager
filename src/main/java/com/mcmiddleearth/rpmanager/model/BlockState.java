@@ -20,13 +20,19 @@ package com.mcmiddleearth.rpmanager.model;
 import com.google.gson.annotations.JsonAdapter;
 import com.mcmiddleearth.rpmanager.json.adapters.VariantsJsonAdapter;
 
+import java.lang.Override;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
-public class BlockState implements JsonRoot {
+public class BlockState implements JsonRoot, ExtraFieldsHolder {
+    private static final Set<String> KNOWN_FIELDS = Set.of("variants", "multipart");
+
     @JsonAdapter(VariantsJsonAdapter.Factory.class)
     private Map<String, List<Model>> variants;
     private List<Case> multipart;
+    private transient Map<String, Object> extra = new HashMap<>();
 
     public Map<String, List<Model>> getVariants() {
         return variants;
@@ -42,5 +48,20 @@ public class BlockState implements JsonRoot {
 
     public void setMultipart(List<Case> multipart) {
         this.multipart = multipart;
+    }
+
+    @Override
+    public Map<String, Object> getExtra() {
+        return extra;
+    }
+
+    @Override
+    public void setExtra(Map<String, Object> extra) {
+        this.extra = extra;
+    }
+
+    @Override
+    public Set<String> getKnownFields() {
+        return KNOWN_FIELDS;
     }
 }

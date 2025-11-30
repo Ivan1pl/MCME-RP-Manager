@@ -20,8 +20,13 @@ package com.mcmiddleearth.rpmanager.model;
 import com.google.gson.annotations.SerializedName;
 
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class ItemModel extends BaseModel implements JsonRoot {
+    private static final Set<String> KNOWN_FIELDS =
+            Stream.concat(BASE_KNOWN_FIELDS.stream(), Stream.of("gui_light", "overrides")).collect(Collectors.toSet());
     @SerializedName("gui_light")
     private GuiLight guiLight;
     private List<Override> overrides;
@@ -40,5 +45,10 @@ public class ItemModel extends BaseModel implements JsonRoot {
 
     public void setOverrides(List<Override> overrides) {
         this.overrides = overrides;
+    }
+
+    @java.lang.Override
+    public Set<String> getKnownFields() {
+        return KNOWN_FIELDS;
     }
 }

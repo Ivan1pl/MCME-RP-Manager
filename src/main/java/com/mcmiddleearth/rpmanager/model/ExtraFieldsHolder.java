@@ -15,21 +15,13 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.mcmiddleearth.rpmanager.utils;
+package com.mcmiddleearth.rpmanager.model;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import com.google.gson.Strictness;
-import com.mcmiddleearth.rpmanager.json.adapters.ExtraFieldsAdapterFactory;
+import java.util.Map;
+import java.util.Set;
 
-public class GsonProvider {
-    private static final Gson GSON = new GsonBuilder()
-            .setStrictness(Strictness.LENIENT).setPrettyPrinting().enableComplexMapKeySerialization()
-            .disableHtmlEscaping().registerTypeAdapterFactory(new ExtraFieldsAdapterFactory()).create();
-
-    private GsonProvider() {}
-
-    public static Gson getGson() {
-        return GSON;
-    }
+public interface ExtraFieldsHolder {
+    Map<String, Object> getExtra();
+    void setExtra(Map<String, Object> extra);
+    Set<String> getKnownFields();
 }
